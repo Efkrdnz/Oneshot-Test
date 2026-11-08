@@ -6,7 +6,11 @@
   "type": "module",
   "scripts": {
     "test": "node tests/physics.test.mjs",
-    "serve": "python3 -m http.server 8080"
+    "serve": "python3 -m http.server 8080",
+    "build:single": "node scripts/build-single.mjs"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "esbuild": "0.24.0"
+  }
 }

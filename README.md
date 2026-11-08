@@ -153,6 +153,17 @@ Then open <http://localhost:8080>. Run the engine tests with Node 18+:
 npm test
 ```
 
+To produce a single self-contained `dist/physlab.html` (works offline when
+opened directly):
+
+```bash
+npm install
+```
+
+```bash
+npm run build:single
+```
+
 ## Deployment
 
 `.github/workflows/pages.yml` runs the physics tests and publishes the static

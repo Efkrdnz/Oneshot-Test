@@ -589,7 +589,22 @@ export class App {
   }
 
   // ------------------------------------------------------------------ export
-  download(name, text, type) {
+  async download(name, text, type) {
+    // inside the claude.ai artifact viewer, files must go through its downloads capability
+    if (window.claude && typeof window.claude.use === 'function') {
+      try {
+        const dl = await window.claude.use('downloads');
+        if (dl) {
+          await dl.save({ filename: name, data: text });
+          this.toast(`Saved ${name}`, 'good');
+          return;
+        }
+      } catch (e) {
+        if (e && e.code === 'declined') return;
+        this.toast('Download is not available here', 'warn');
+        return;
+      }
+    }
     const blob = new Blob([text], { type });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -618,7 +633,10 @@ export class App {
     const data = this.serialize();
     if (data.particles && data.particles.length > 5 * 1500) data.particles = [];
     const code = await encodeShare(data);
-    return location.origin + location.pathname + '#s=' + code;
+    // inside the claude.ai artifact viewer the page's own address is not shareable,
+    // so links point at the GitHub Pages build of the lab
+    const base = window.claude ? 'https://efkrdnz.github.io/Oneshot-Test/' : location.origin + location.pathname;
+    return base + '#s=' + code;
   }
 
   // ------------------------------------------------------------------ UI building

@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>PhysLab — 2D Physics Laboratory</title>
+  <meta name="description" content="An interactive 2D physics laboratory: build scenarios with gravity, air resistance, friction, slopes, springs, strings, pulleys, liquids, waves, photogates and chronometers." />
+  <meta name="theme-color" content="#0b1020" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b1020'/%3E%3Ccircle cx='22' cy='40' r='10' fill='%2338bdf8'/%3E%3Cpath d='M8 54 L56 30' stroke='%23f472b6' stroke-width='5' stroke-linecap='round'/%3E%3Ccircle cx='44' cy='18' r='6' fill='%23facc15'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="app" class="app">
+    <header class="topbar">
+      <div class="brand">
+        <svg viewBox="0 0 64 64" class="brand-logo" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#111a33"/><circle cx="22" cy="40" r="10" fill="#38bdf8"/><path d="M8 54 L56 30" stroke="#f472b6" stroke-width="5" stroke-linecap="round"/><circle cx="44" cy="18" r="6" fill="#facc15"/></svg>
+        <div class="brand-text"><span class="brand-name">PhysLab</span><span class="brand-sub">2D physics laboratory</span></div>
+      </div>
+      <input id="sceneName" class="scene-name" spellcheck="false" value="Untitled experiment" aria-label="Experiment name" />
+      <div class="transport">
+        <button id="btnReset" class="tbtn" title="Reset to start state (R)" data-icon="reset"></button>
+        <button id="btnPlay" class="tbtn play" title="Play / pause (Space)" data-icon="play"></button>
+        <button id="btnStep" class="tbtn" title="Step one frame (.)" data-icon="step"></button>
+        <select id="speedSel" class="speed" title="Simulation speed">
+          <option value="0.05">0.05×</option>
+          <option value="0.1">0.1×</option>
+          <option value="0.25">0.25×</option>
+          <option value="0.5">0.5×</option>
+          <option value="1" selected>1×</option>
+          <option value="2">2×</option>
+          <option value="4">4×</option>
+        </select>
+        <div class="clock" title="Simulation time"><span class="clock-label">t</span><span id="simTime">0.000</span><span class="clock-unit">s</span></div>
+      </div>
+      <div class="top-actions">
+        <button id="btnUndo" class="tbtn" title="Undo (Ctrl+Z)" data-icon="undo"></button>
+        <button id="btnRedo" class="tbtn" title="Redo (Ctrl+Shift+Z)" data-icon="redo"></button>
+        <span class="sep"></span>
+        <button id="btnPresets" class="pill accent" title="Experiment presets"><span data-icon="flask"></span><span class="lbl">Experiments</span></button>
+        <button id="btnFiles" class="pill" title="Save, open, export, share"><span data-icon="folder"></span><span class="lbl">Files</span></button>
+        <button id="btnHelp" class="tbtn" title="Help & shortcuts (?)" data-icon="help"></button>
+        <button id="btnPanel" class="tbtn mobile-only" title="Toggle side panel" data-icon="panel"></button>
+      </div>
+    </header>
+
+    <nav id="toolbar" class="toolbar" aria-label="Tools"></nav>
+
+    <main class="stage" id="stage">
+      <div id="optionsBar" class="options-bar"></div>
+      <canvas id="canvas" tabindex="0" aria-label="Physics lab canvas"></canvas>
+      <div id="infoCard" class="info-card hidden"></div>
+      <button id="infoToggle" class="info-toggle hidden" title="Show experiment notes" data-icon="info"></button>
+      <div class="view-controls">
+        <button id="btnZoomIn" class="vbtn" title="Zoom in" data-icon="plus"></button>
+        <button id="btnZoomOut" class="vbtn" title="Zoom out" data-icon="minus"></button>
+        <button id="btnFit" class="vbtn" title="Fit room (F)" data-icon="fit"></button>
+        <button id="btnSnap" class="vbtn toggle" title="Snap to grid (G)" data-icon="grid"></button>
+        <button id="btnVectors" class="vbtn toggle" title="Show velocity & force vectors (V… see Room → Display)" data-icon="vector"></button>
+      </div>
+      <div id="toasts" class="toasts"></div>
+      <div id="ctxMenu" class="ctx-menu hidden"></div>
+      <div id="hudTimers" class="hud-timers"></div>
+    </main>
+
+    <aside id="sidepanel" class="sidepanel">
+      <div class="tabs" role="tablist">
+        <button class="tab active" data-tab="inspect">Inspect</button>
+        <button class="tab" data-tab="room">Room</button>
+        <button class="tab" data-tab="data">Data</button>
+        <button class="tab" data-tab="timers">Timers</button>
+      </div>
+      <div class="tab-body">
+        <section id="tab-inspect" class="tab-pane active"></section>
+        <section id="tab-room" class="tab-pane"></section>
+        <section id="tab-data" class="tab-pane"></section>
+        <section id="tab-timers" class="tab-pane"></section>
+      </div>
+    </aside>
+
+    <footer class="statusbar">
+      <span id="statusHint" class="hint">Pick a tool on the left, or open Experiments to load a ready-made lab.</span>
+      <span class="status-right">
+        <span id="statusCursor">x 0.00 · y 0.00 m</span>
+        <span id="statusCounts">0 bodies</span>
+        <span id="statusFps">60 fps</span>
+      </span>
+    </footer>
+  </div>
+
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-head"><h2 id="modalTitle"></h2><button id="modalClose" class="tbtn" data-icon="close" title="Close"></button></div>
+      <div id="modalBody" class="modal-body"></div>
+    </div>
+  </div>
+
+  <noscript><div class="noscript">PhysLab needs JavaScript to run.</div></noscript>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

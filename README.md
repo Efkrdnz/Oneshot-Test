@@ -5,10 +5,8 @@ rules of the room and measure what happens. Everything runs client-side in
 plain JavaScript (no build step, no dependencies), on a physics engine written
 for this project.
 
-**Play it:** once GitHub Pages is enabled for this repository (see
-[Deployment](#deployment)), the lab is served at
-`https://<owner>.github.io/Oneshot-Test/`. You can also open `index.html`
-through any static web server (see [Run locally](#run-locally)).
+**Play it:** <https://efkrdnz.github.io/Oneshot-Test/>. You can also open
+`index.html` through any static web server (see [Run locally](#run-locally)).
 
 ## What you can do
 
@@ -166,11 +164,10 @@ npm run build:single
 
 ## Deployment
 
-`.github/workflows/pages.yml` runs the physics tests and publishes the static
-site to GitHub Pages on every push to `main` or `claude/**` branches, or when
-started manually. If the repository has never used Pages, enable it once:
-**Settings → Pages → Build and deployment → Source: GitHub Actions**, then
-re-run the workflow.
+The live site is served by GitHub Pages from the `gh-pages` branch:
+<https://efkrdnz.github.io/Oneshot-Test/>.
+`.github/workflows/pages.yml` runs the physics tests on every push and, for
+the default branch, rebuilds `gh-pages` from `index.html`, `css/` and `js/`.
 
 ## Project layout
 

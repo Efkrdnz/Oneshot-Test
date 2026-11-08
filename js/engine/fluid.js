@@ -289,7 +289,9 @@ export class ParticleFluid {
     const P = this.p;
     const PN = this.pN;
     for (let i = 0; i < n; i++) {
-      P[i] = k * (rho[i] - rho0);
+      // weak cohesion (negative pressure) so streams do not clump into beads
+      const pr = k * (rho[i] - rho0);
+      P[i] = pr < 0 && rho[i] < rho0 * 0.6 ? pr * 0.25 : pr;
       PN[i] = kNear * rhoN[i];
     }
     const h2 = h * h;

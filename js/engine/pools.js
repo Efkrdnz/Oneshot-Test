@@ -206,7 +206,7 @@ export function stepPools(world, dt) {
               damp += 25 * k * k;
             }
           }
-          V[i] += hs * (c2 * (l + r - 2 * H[i]) - damp * V[i] - 0.3 * H[i]);
+          V[i] += hs * (c2 * (l + r - 2 * H[i]) - damp * V[i] - 0.8 * H[i]);
         }
         for (let i = 0; i < n; i++) H[i] += hs * V[i];
         if (gen.on) {
@@ -217,7 +217,7 @@ export function stepPools(world, dt) {
         }
       }
       // clamp to avoid runaway
-      const lim = Math.max(0.05, depth * 0.8);
+      const lim = Math.max(0.05, Math.min(depth * 0.5, 1.2));
       for (let i = 0; i < n; i++) {
         if (H[i] > lim) H[i] = lim;
         else if (H[i] < -lim) H[i] = -lim;
@@ -238,18 +238,20 @@ export function stepPools(world, dt) {
         if (!b.awake) b.wake();
       }
       if (pool.waves) {
+        // bounded, acceleration-style coupling: a body moving through the
+        // surface drags nearby water along with it; moving sideways it piles
+        // water up in front and leaves a trough behind
         const i0 = Math.max(0, Math.floor((b.aabb.minX - pool.x0) / pool.dx));
         const i1 = Math.min(pool.n - 1, Math.floor((b.aabb.maxX - pool.x0) / pool.dx));
-        const vy = b.vy;
-        for (let i = i0; i <= i1; i++) {
-          pool.v[i] += (vy * 0.6 - pool.v[i]) * 0.12;
-        }
-        // horizontal motion: push water up in front, down behind
+        const vy = Math.max(-6, Math.min(6, b.vy));
+        const kc = 2.5 * dt;
+        for (let i = i0; i <= i1; i++) pool.v[i] += vy * kc;
         if (Math.abs(b.vx) > 0.05) {
-          const front = b.vx > 0 ? Math.min(pool.n - 1, i1 + 1) : Math.max(0, i0 - 1);
-          const back = b.vx > 0 ? Math.max(0, i0 - 1) : Math.min(pool.n - 1, i1 + 1);
-          pool.v[front] += Math.abs(b.vx) * 0.25;
-          pool.v[back] -= Math.abs(b.vx) * 0.25;
+          const vx = Math.max(-6, Math.min(6, b.vx));
+          const front = vx > 0 ? Math.min(pool.n - 1, i1 + 1) : Math.max(0, i0 - 1);
+          const back = vx > 0 ? Math.max(0, i0 - 1) : Math.min(pool.n - 1, i1 + 1);
+          pool.v[front] += Math.abs(vx) * 3 * dt;
+          pool.v[back] -= Math.abs(vx) * 3 * dt;
         }
       }
       if (wasAbove && b.vy < -1.5 && world.splashes.length < 600) {

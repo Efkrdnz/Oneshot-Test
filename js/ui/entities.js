@@ -89,7 +89,8 @@ export function hitTest(app, wx, wy, tol, filter) {
     for (let i = w.timers.length - 1; i >= 0; i--) {
       const t = w.timers[i];
       const p = cam.toScreen(t.x, t.y);
-      if (Math.abs(s.x - p.x) < 70 && Math.abs(s.y - p.y) < 26) return { kind: 'timer', obj: t };
+      const k = Math.max(0.6, Math.min(1, cam.scale / 42));
+      if (Math.abs(s.x - p.x) < 70 * k && Math.abs(s.y - p.y) < 26 * k) return { kind: 'timer', obj: t };
     }
   }
   if (ok('label')) {

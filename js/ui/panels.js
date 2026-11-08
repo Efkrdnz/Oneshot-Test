@@ -430,9 +430,9 @@ export class TimersPanel {
     for (const t of w.timers) {
       const card = document.createElement('div');
       card.className = 'timer-card';
-      card.innerHTML = `<div class="timer-top"><div class="timer-name"><span class="timer-dot"></span><span class="tn"></span></div><div class="btn-row" style="margin:0"></div></div><div class="timer-digits"></div><div class="small-note gates"></div><div class="laps"></div>`;
+      card.innerHTML = `<div class="timer-top"><div class="timer-name"><span class="timer-dot"></span><span class="tn"></span></div><button class="btn small sel" title="Select on canvas">${icon('target')}</button></div><div class="timer-digits"></div><div class="btn-row timer-btns" style="margin:0 0 6px"></div><div class="small-note gates"></div><div class="laps"></div>`;
       card.querySelector('.tn').textContent = t.name;
-      const btns = card.querySelector('.btn-row');
+      const btns = card.querySelector('.timer-btns');
       for (const [lbl, fn] of [['Start', () => t.start(w.time)], ['Stop', () => t.stop(w.time)], ['Lap', () => t.lap(w.time)], ['Reset', () => t.reset()]]) {
         const b = document.createElement('button');
         b.className = 'btn small';
@@ -440,12 +440,7 @@ export class TimersPanel {
         b.addEventListener('click', () => { fn(); app.commit('Timer'); });
         btns.append(b);
       }
-      const sel = document.createElement('button');
-      sel.className = 'btn small';
-      sel.innerHTML = icon('target');
-      sel.title = 'Select';
-      sel.addEventListener('click', () => app.select('timer', t));
-      btns.append(sel);
+      card.querySelector('.sel').addEventListener('click', () => app.select('timer', t));
       const linked = w.gates.filter((g) => g.timerId === t.id);
       card.querySelector('.gates').innerHTML = (t.autoStart ? 'Starts with the simulation · ' : '') + (linked.length ? 'Gates: ' + linked.map((g) => `${esc(g.name)} → ${g.action}`).join(', ') : 'No gates linked');
       const digits = card.querySelector('.timer-digits');
@@ -591,6 +586,7 @@ function drawThumb(canvas, id) {
     const fake = { getBoundingClientRect: () => ({ width: W, height: H }), getContext: () => canvas.getContext('2d'), width: canvas.width, height: canvas.height };
     const R = new Renderer(fake, cam);
     R.dpr = dpr;
+    R.thumb = true;
     cam.resize(W, H);
     const room = world.settings.room;
     const c = world.meta.camera;

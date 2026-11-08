@@ -162,11 +162,12 @@ export const PRESETS = [
     id: 'projectile',
     name: 'Projectile motion & drag',
     category: 'Mechanics',
-    description: 'Two identical cork balls are fired at 45° and 14 m/s. The pink one feels air resistance, the blue one has Cd = 0 (as in vacuum). The dashed curve is the ideal parabola.',
+    description: 'Two identical balsa balls are fired at 45° and 14 m/s. The pink one feels air resistance, the blue one has Cd = 0 (as in vacuum). The dashed curve is the ideal parabola.',
     goals: ['Ideal range R = v² sin 2θ / g ≈ 20 m', 'Compare the two landing points', 'Change angle/speed in the Inspector (select a cannon)'],
     build(B) {
-      B.cannon(-10.5, 0.6, 45, 14, { name: 'With air drag', fireOnStart: true, projectile: { r: 0.15, material: 'cork', layer: 2, mask: 1, color: '#f472b6' } });
-      B.cannon(-10.5, 0.6, 45, 14, { name: 'Without drag (Cd = 0)', fireOnStart: true, projectile: { r: 0.15, material: 'cork', dragCoef: 0, layer: 4, mask: 1, color: '#38bdf8' }, showPrediction: false });
+      B.cannon(-10.5, 0.6, 45, 14, { name: 'Twin cannons', fireOnStart: true, projectile: { r: 0.15, material: 'balsa', layer: 2, mask: 1, color: '#f472b6' } });
+      const c2 = B.cannon(-10.5, 0.6, 45, 14, { name: 'Without drag (Cd = 0)', fireOnStart: true, projectile: { r: 0.15, material: 'balsa', dragCoef: 0, layer: 4, mask: 1, color: '#38bdf8' }, showPrediction: false });
+      c2.hideLabel = true;
       B.ruler(-9.86, 0.2, 10.12, 0.2, { name: 'Ideal range' });
       B.label(0, 7.4, 'Max height (ideal) = v² sin²θ / 2g ≈ 5.0 m', { size: 0.28, color: '#94a3b8' });
       B.label(-4, 12, 'Pink: air drag   ·   Blue: no drag', { size: 0.32 });
@@ -190,7 +191,7 @@ export const PRESETS = [
         const a = deg(15);
         const bob = B.ball(d.x + d.L * Math.sin(a), py - d.L * Math.cos(a), 0.15, d.mat, { name: d.name, trail: true, record: true });
         B.rope(null, { x: d.x, y: py }, bob, { x: bob.x, y: bob.y }, { length: d.L, name: 'String' });
-        const t = B.timer(d.x + 2.4, py - 1.2, d.name, {});
+        const t = B.timer(d.x + 0.4, py - d.L - 1.7, d.name, {});
         B.gate(d.x, py - d.L - 0.5, d.x, py - d.L + 0.4, { mode: 'center', timerId: t.id, action: 'lap', filterBody: bob.id, name: 'Bottom gate' });
       }
       B.label(-1, 3, 'Each lap = half a period · T = 2π√(L/g)', { size: 0.3, color: '#94a3b8' });
@@ -209,7 +210,7 @@ export const PRESETS = [
       const L = 5;
       const mat = { density: 7850, staticFriction: 0, friction: 0, restitution: 1 };
       for (let i = 0; i < 5; i++) {
-        const x = (i - 2) * (2 * r + 0.0005);
+        const x = (i - 2) * (2 * r + 0.03); // small gaps make the collisions sequential
         let bx = x;
         let by = 10.85 - L;
         if (i === 0) {
@@ -301,14 +302,18 @@ export const PRESETS = [
         ['cork', -10.6], ['wood', -9.2], ['ice', -7.8], ['plastic', -6.4], ['rubber', -5], ['aluminum', -3.6], ['steel', -2.2],
       ];
       for (const [m, x] of left) {
-        B.box(x, 5 + Math.random() * 0.4, 0.6, 0.6, m, { name: m[0].toUpperCase() + m.slice(1), showLabel: true });
+        B.box(x, 5 + Math.random() * 0.4, 0.6, 0.6, m, { name: m[0].toUpperCase() + m.slice(1) });
+        B.label(x, 7.2 - (x % 2 === 0 ? 0 : 0), m[0].toUpperCase() + m.slice(1), { size: 0.22, color: '#94a3b8' });
       }
       B.pool(-0.6, 11.9, 0, 2, 'water', { name: 'Water layer' });
       B.pool(-0.6, 11.9, 2, 3.2, 'oil', { name: 'Oil layer', waves: false });
       const right = [['wood', 1], ['ice', 3], ['plastic', 5], ['rubber', 7], ['cork', 9]];
-      for (const [m, x] of right) B.ball(x, 5 + Math.random() * 0.3, 0.3, m, { name: m[0].toUpperCase() + m.slice(1), showLabel: true });
-      B.label(-6.4, 7, 'Water ρ = 1000 kg/m³', { size: 0.3 });
-      B.label(5.6, 7, 'Oil (910) over water (1000)', { size: 0.3 });
+      for (const [m, x] of right) {
+        B.ball(x, 5 + Math.random() * 0.3, 0.3, m, { name: m[0].toUpperCase() + m.slice(1) });
+        B.label(x, 7.2, m[0].toUpperCase() + m.slice(1), { size: 0.22, color: '#94a3b8' });
+      }
+      B.label(-6.4, 8.4, 'Water ρ = 1000 kg/m³', { size: 0.3 });
+      B.label(5.6, 8.4, 'Oil (910) over water (1000)', { size: 0.3 });
     },
   },
   {
@@ -331,6 +336,7 @@ export const PRESETS = [
       B.wall(5.5, 5.8, 7, 0.4, 'wood', { material: { ...mu }, name: 'Table' });
       B.wall(2.4, 2.8, 0.3, 5.6, 'wood', { name: 'Leg' });
       B.wall(8.6, 2.8, 0.3, 5.6, 'wood', { name: 'Leg' });
+      B.wall(8.35, 6.25, 0.2, 0.5, 'rubber', { name: 'Stopper' });
       const blk = B.box(3.5, 6.31, 0.8, 0.6, 'wood', { material: { ...mu }, mass: 2, name: '2 kg block', showLabel: true, record: true });
       const hang = B.box(9.4, 4.5, 0.5, 0.5, 'steel', { mass: 1.5, name: '1.5 kg', showLabel: true });
       B.pulley(blk, { x: 3.9, y: 6.31 }, hang, { x: 9.4, y: 4.75 }, { x: 9.15, y: 6.31 }, { x: 9.4, y: 6.06 }, { name: 'Table pulley', wheelRadius: 0.25 });
@@ -393,7 +399,7 @@ export const PRESETS = [
     description: 'Top: a driven string at its 2nd harmonic forms a standing wave. Middle: a single pulse reflects from a free end. Bottom: a travelling wave is absorbed at the far end.',
     goals: ['Wave speed v = √(T/μ) = 31.6 m/s', 'Harmonics: fₙ = n·v / 2L (select a string to see them)', 'Fixed ends invert reflected pulses, free ends do not'],
     build(B) {
-      B.waveString(-10, 11, 10, 11, { tension: 40, density: 0.04, damping: 0.25, nodes: 220, endB: 'fixed', driver: { type: 'sine', frequency: 1.581, amplitude: 0.04 }, name: 'Standing wave (n = 2)', color: '#f472b6' });
+      B.waveString(-10, 11, 10, 11, { tension: 40, density: 0.04, damping: 0.15, nodes: 220, endB: 'fixed', driver: { type: 'sine', frequency: 1.581, amplitude: 0.06 }, name: 'Standing wave (n = 2)', color: '#f472b6' });
       const p = B.waveString(-10, 7, 10, 7, { tension: 40, density: 0.04, damping: 0.02, nodes: 220, endB: 'free', driver: { type: 'pulse', frequency: 3, amplitude: 0.8 }, name: 'Pulse, free end', color: '#38bdf8' });
       p.pulseStart = 0.1;
       B.waveString(-10, 3, 10, 3, { tension: 40, density: 0.04, damping: 0.02, nodes: 220, endB: 'absorb', driver: { type: 'sine', frequency: 3, amplitude: 0.35 }, name: 'Travelling wave, absorbing end', color: '#facc15' });
@@ -409,7 +415,7 @@ export const PRESETS = [
     description: 'A paddle at the left generates surface waves (speed √(g·depth)); an absorbing beach at the right damps them. Boats, a buoy and a sealed tank half-filled with water ride the swell.',
     goals: ['Select the pool to change amplitude & frequency', 'Hull mode: a boat displaces its whole outline', 'The sealed tank carries internal liquid'],
     build(B) {
-      B.pool(-12, 12, 0, 3.5, 'water', { name: 'Wave tank', generator: { on: true, amplitude: 0.14, frequency: 0.55, side: 'left' }, beach: 'absorb' });
+      B.pool(-12, 12, 0, 3.5, 'water', { name: 'Wave tank', generator: { on: true, amplitude: 0.25, frequency: 0.6, side: 'left' }, beach: 'absorb' });
       B.body({ kind: 'boat', w: 2.2, h: 0.6, t: 0.08 }, -5, 4.1, { materialKey: 'wood', hull: true, name: 'Boat', design: true });
       B.body({ kind: 'boat', w: 1.4, h: 0.45, t: 0.06 }, 1, 4.1, { materialKey: 'aluminum', hull: true, name: 'Dinghy', design: true });
       B.ball(4.5, 4.2, 0.3, 'cork', { name: 'Buoy', color: '#f97316' });
@@ -428,10 +434,12 @@ export const PRESETS = [
       B.room({ left: -10, right: 10 });
       const plank = B.box(0, 2.6, 7, 0.2, 'wood', { name: 'Seesaw plank' });
       B.wedge(0, 1.25, 1, 2.5, 'stone', { type: 'static', name: 'Fulcrum' });
-      B.pin(plank, 0, 2.6, { name: 'Pivot' });
-      B.container(-2.5, 3.36, 1.6, 1.3, 0.08, 'glass', { name: 'Cup' });
+      B.pin(plank, 0, 2.6, { name: 'Pivot', enableLimit: true, lowerAngle: -deg(12), upperAngle: deg(12) });
+      const cup = B.container(-2.5, 3.36, 1.6, 1.3, 0.08, 'glass', { name: 'Cup' });
+      B.weld(plank, cup, -2.5, 2.75, { name: 'Glue' });
       const cw = B.box(2.6, 3.1, 0.8, 0.8, 'steel', { name: 'Counterweight', showLabel: true });
-      cw.setMass(150);
+      cw.setMass(140);
+      B.weld(plank, cw, 2.6, 2.75, { name: 'Glue' });
       B.faucet(-2.5, 9.5, { rate: 70, speed: 1.5, width: 0.25, liquid: 'water', limit: 520, name: 'Faucet' });
       B.drain(8, 0.25, 3, 0.5, { name: 'Drain' });
       B.label(0, 11.5, 'The cup gets heavier as it fills — watch the seesaw tip', { size: 0.3 });
@@ -555,7 +563,21 @@ export const PRESETS = [
       bag.setMass(8);
       B.rope(null, { x: 3.6, y: 11.9 }, bag, { x: 3.6, y: 6.5 });
       B.rope(null, { x: 4.4, y: 11.9 }, bag, { x: 4.4, y: 6.5 });
-      B.cannon(-9, 5.6, 1.15, 20, { name: 'Gun', projectile: { r: 0.1, material: 'lead', mass: 2, restitution: 0 }, fireOnStart: true });
+      // aim so the ideal trajectory hits the middle of the bag's face
+      const gun = { x: -6, y: 5.4, v: 20, barrel: 0.9 };
+      const target = { x: 3.5, y: 6 };
+      let lo = -0.3;
+      let hi = 0.6;
+      for (let i = 0; i < 60; i++) {
+        const th = (lo + hi) / 2;
+        const mx = gun.x + Math.cos(th) * gun.barrel;
+        const my = gun.y + Math.sin(th) * gun.barrel;
+        const t = (target.x - mx) / (gun.v * Math.cos(th));
+        const y = my + gun.v * Math.sin(th) * t - 0.5 * 9.81 * t * t;
+        if (y < target.y) lo = th;
+        else hi = th;
+      }
+      B.cannon(gun.x, gun.y, (((lo + hi) / 2) * 180) / Math.PI, gun.v, { name: 'Gun', barrel: gun.barrel, projectile: { r: 0.1, material: 'lead', mass: 2, restitution: 0, dragCoef: 0 }, fireOnStart: true });
       B.ruler(6, 5.5, 6, 6.3, { name: 'Rise' });
       B.label(0, 9, 'Bag and ball move together right after impact', { size: 0.28, color: '#94a3b8' });
     },
@@ -571,7 +593,7 @@ export const PRESETS = [
         const plank = B.box(cx, 3, 6, 0.15, 'wood', { name: 'Lever' });
         plank.setMass(1);
         B.wedge(cx, 1.46, 0.8, 2.9, 'stone', { type: 'static', name: 'Fulcrum' });
-        B.pin(plank, cx, 3, { name: 'Pivot' });
+        B.pin(plank, cx, 3, { name: 'Pivot', enableLimit: true, lowerAngle: -deg(15), upperAngle: deg(15) });
         B.box(cx - 1, 3.33, 0.5, 0.5, 'steel', { mass: 2, name: '2 kg', showLabel: true, material: { staticFriction: 1, friction: 1, restitution: 0, density: 8000 } });
         B.box(cx + rb, 3.33, 0.5, 0.5, 'aluminum', { mass: 1, name: '1 kg', showLabel: true, material: { staticFriction: 1, friction: 1, restitution: 0, density: 2700 } });
         B.label(cx, 6, rb === 2 ? '2 kg × 1 m = 1 kg × 2 m' : '2 kg × 1 m < 1 kg × 2.6 m', { size: 0.3 });

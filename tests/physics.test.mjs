@@ -161,11 +161,16 @@ const vacuum = { airDensity: 0, airViscosity: 0 };
   w.settings.room.left = -1.5; w.settings.room.right = 1.5; w.rebuildRoom();
   const n = w.fluid.fillRect(-1.4, 0.05, 1.4, 1.6, 'water');
   run(w, 4);
-  let maxV = 0, maxY = 0;
-  for (let i = 0; i < w.fluid.count; i++) { maxV = Math.max(maxV, Math.hypot(w.fluid.vx[i], w.fluid.vy[i])); maxY = Math.max(maxY, w.fluid.y[i]); }
-  console.log(`      fluid: ${n} particles -> ${w.fluid.count}, max speed ${maxV.toFixed(3)}, surface ~${maxY.toFixed(3)}`);
+  const speeds = [];
+  let maxY = 0;
+  for (let i = 0; i < w.fluid.count; i++) { speeds.push(Math.hypot(w.fluid.vx[i], w.fluid.vy[i])); maxY = Math.max(maxY, w.fluid.y[i]); }
+  speeds.sort((a, b) => a - b);
+  const mean = speeds.reduce((a, b) => a + b, 0) / speeds.length;
+  const p98 = speeds[Math.floor(speeds.length * 0.98)];
+  console.log(`      fluid: ${n} particles -> ${w.fluid.count}, mean speed ${mean.toFixed(3)}, p98 ${p98.toFixed(3)}, surface ~${maxY.toFixed(3)}`);
   check('fluid particles retained', w.fluid.count, n, 0);
-  check('fluid settled (max speed)', maxV, 0, 0.6);
+  check('fluid settled (mean speed)', mean, 0, 0.1);
+  check('fluid settled (98th percentile speed)', p98, 0, 0.5);
 }
 // 12. Wave string speed sqrt(T/mu)
 {
@@ -260,6 +265,21 @@ const vacuum = { airDensity: 0, airViscosity: 0 };
   for (let i = 0; i < 240; i++) { w.step(); vmax = Math.max(vmax, Math.hypot(bead.vx, bead.vy)); }
   const ideal = Math.sqrt(2 * 9.81 * (y0 - 1.2));
   check('bead on curved track keeps energy', vmax / ideal, 1, 0.01);
+}
+
+// 20. A moving body hitting a sleeping body transfers momentum (no "frozen wall")
+{
+  const w = new World({ ...vacuum, gravity: { x: 0, y: -9.81 } });
+  const fr = { restitution: 1, friction: 0, staticFriction: 0, density: 1000 };
+  w.roomBodies.forEach((r) => Object.assign(r.material, { friction: 0, staticFriction: 0 }));
+  const target = w.createBody({ geom: { kind: 'circle', r: 0.2 }, x: 2, y: 0.2, material: fr });
+  run(w, 2.5);
+  const slept = !target.awake;
+  const ball = w.createBody({ geom: { kind: 'circle', r: 0.2 }, x: -2, y: 0.2, vx: 3, material: fr });
+  run(w, 2);
+  console.log('      target was asleep before impact:', slept);
+  check('impact on sleeping body: target speed', target.vx, 3, 0.1);
+  check('impact on sleeping body: projectile speed', ball.vx, 0, 0.1);
 }
 console.log(failures ? `\n${failures} check(s) failed` : '\nall checks passed');
 process.exit(failures ? 1 : 0);

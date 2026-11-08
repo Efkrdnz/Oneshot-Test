@@ -20,6 +20,7 @@ export class Cannon {
     this.maxShots = o.maxShots ?? 25;
     this.trail = o.trail ?? true;
     this.showPrediction = o.showPrediction ?? true;
+    this.hideLabel = !!o.hideLabel;
     this.color = o.color || '#94a3b8';
     this.shots = [];
     this.lastFire = -Infinity;
@@ -187,20 +188,25 @@ export function stepDevicesPre(world, dt) {
     }
   }
   const fluid = world.fluid;
+  const sp = fluid.radius * 1.15; // rest spacing of particles
   for (const e of world.emitters) {
     if (!e.on) continue;
     if (e.limit && e.emitted >= e.limit) continue;
-    e._acc += e.rate * dt;
+    // never emit denser than the liquid's rest spacing (avoids explosive spray)
+    const lanes = Math.max(1, Math.round(e.width / sp));
+    const maxRate = (Math.max(0.3, e.speed) * lanes) / sp;
+    e._acc += Math.min(e.rate, maxRate) * dt;
     const a = (e.angle * Math.PI) / 180;
     const dx = Math.cos(a);
     const dy = Math.sin(a);
     while (e._acc >= 1) {
       e._acc -= 1;
-      const off = (Math.random() - 0.5) * e.width;
-      const px = e.x - dy * off;
-      const py = e.y + dx * off;
-      const sp = e.speed * (0.95 + Math.random() * 0.1);
-      if (fluid.add(px, py, dx * sp, dy * sp, e.liquid) < 0) break;
+      e._lane = ((e._lane || 0) + 1) % lanes;
+      const off = lanes > 1 ? (e._lane / (lanes - 1) - 0.5) * (lanes - 1) * sp : 0;
+      const jitter = (Math.random() - 0.5) * sp * 0.1;
+      const px = e.x - dy * (off + jitter);
+      const py = e.y + dx * (off + jitter);
+      if (fluid.add(px, py, dx * e.speed, dy * e.speed, e.liquid) < 0) break;
       e.emitted++;
     }
   }

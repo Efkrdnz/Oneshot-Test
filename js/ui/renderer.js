@@ -251,6 +251,7 @@ export class Renderer {
   }
 
   drawScaleBar() {
+    if (this.thumb) return;
     const ctx = this.ctx;
     const cam = this.camera;
     const target = 90;
@@ -391,8 +392,9 @@ export class Renderer {
     if (b.surfaceSpeed) this.drawConveyorMarks(b, p);
     // COM
     if (disp.com && !isStatic) this.drawCOM(sx, sy);
-    if ((b.showLabel || disp.labels) && !b.room) {
-      const txt = `${b.name || ''}${b.name ? ' · ' : ''}${b.type === 'dynamic' ? fmtMass(b.mass) : b.type}`;
+    if ((b.showLabel || disp.labels) && !b.room && !this.thumb) {
+      const showMass = b.type === 'dynamic' && !/\bk?g\b/.test(b.name || '');
+      const txt = `${b.name || ''}${b.name && (showMass || b.type !== 'dynamic') ? ' · ' : ''}${showMass ? fmtMass(b.mass) : b.type === 'dynamic' ? '' : b.type}`;
       ctx.font = '600 11px Inter, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'bottom';
@@ -521,7 +523,7 @@ export class Renderer {
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     ctx.fillStyle = rgba('#e2e8f0', 0.65);
-    if (x1 - x0 > 90) ctx.fillText(`${p.name} · ρ ${Math.round(p.density)} kg/m³`, x0 + 6, cam.sy(p.level - 0.05) + 6);
+    if (x1 - x0 > 90 && !this.thumb) ctx.fillText(`${p.name} · ρ ${Math.round(p.density)} kg/m³`, x0 + 6, cam.sy(p.level - 0.05) + 6);
   }
 
   poolSurfacePath(p, closed) {
@@ -925,7 +927,7 @@ export class Renderer {
     ctx.font = '600 11px Inter, sans-serif';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'bottom';
-    ctx.fillStyle = 'rgba(226,232,240,0.7)';
+    ctx.fillStyle = this.thumb ? 'rgba(0,0,0,0)' : 'rgba(226,232,240,0.7)';
     ctx.fillText(`v = ${s.speed.toFixed(1)} m/s · f = ${s.driver.type === 'none' ? '—' : s.driver.frequency.toFixed(2) + ' Hz'}`, A.x - 16, A.y - 20);
   }
 
@@ -1046,11 +1048,13 @@ export class Renderer {
     ctx.fillStyle = e.on ? LIQUIDS[e.liquid]?.color || '#38bdf8' : '#475569';
     ctx.fill();
     ctx.restore();
-    ctx.font = '10px Inter, sans-serif';
-    ctx.fillStyle = 'rgba(226,232,240,0.6)';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'bottom';
-    ctx.fillText(`${e.name}${e.on ? '' : ' (off)'}`, s.x, s.y - 12);
+    if (!this.thumb) {
+      ctx.font = '10px Inter, sans-serif';
+      ctx.fillStyle = 'rgba(226,232,240,0.6)';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(`${e.name}${e.on ? '' : ' (off)'}`, s.x, s.y - 12);
+    }
   }
 
   drawCannon(c, world, sel) {
@@ -1110,7 +1114,7 @@ export class Renderer {
     ctx.fillStyle = '#94a3b8';
     ctx.fill();
     ctx.restore();
-    this.tag(`${c.name} · ${c.speed.toFixed(1)} m/s @ ${c.angle.toFixed(1)}°`, s.x, s.y + Math.max(14, 0.45 * sc) + 6, '#cbd5e1', 'center');
+    if (!c.hideLabel || sel) this.tag(`${c.name} · ${c.speed.toFixed(1)} m/s @ ${c.angle.toFixed(1)}°`, s.x, s.y + Math.max(14, 0.45 * sc) + 6, '#cbd5e1', 'center');
   }
 
   drawSlingshot(s, world, sel) {
@@ -1199,16 +1203,21 @@ export class Renderer {
       ctx.stroke();
       ctx.restore();
     }
-    let txt = `${g.name}`;
-    if (g.count) txt += ` · n=${g.count}`;
-    if (g.lastPerp !== undefined && g.lastPerp !== null && g.count) txt += ` · v⊥=${g.lastPerp.toFixed(2)} m/s`;
-    if (g.lastDuration) txt += ` · Δt=${(g.lastDuration * 1000).toFixed(1)} ms`;
-    const mx = Math.max(A.x, B.x) + 10;
-    const my = (A.y + B.y) / 2;
-    this.tag(txt, mx, my, blocked ? '#fda4af' : '#cbd5e1');
+    // compact two-line tag: name, then the latest measurement
+    const horizontal = Math.abs(B.x - A.x) > Math.abs(B.y - A.y);
+    const lx = horizontal ? (A.x + B.x) / 2 : Math.max(A.x, B.x) + 10;
+    const ly = horizontal ? Math.min(A.y, B.y) - 22 : (A.y + B.y) / 2 - 8;
+    const align = horizontal ? 'center' : 'left';
+    this.tag(g.name, lx, ly, sel ? '#7dd3fc' : '#94a3b8', align);
+    if (g.count) {
+      let m = `n=${g.count}`;
+      if (g.lastPerp !== undefined && g.lastPerp !== null) m += ` · v=${g.lastPerp.toFixed(2)} m/s`;
+      this.tag(m, lx, ly + 16, blocked ? '#fda4af' : '#e2e8f0', align);
+    }
   }
 
   drawRuler(r, sel) {
+    if (this.thumb) return;
     const ctx = this.ctx;
     const cam = this.camera;
     const A = cam.toScreen(r.x1, r.y1);
@@ -1245,6 +1254,7 @@ export class Renderer {
   }
 
   drawLabel(l, sel) {
+    if (this.thumb) return;
     const ctx = this.ctx;
     const cam = this.camera;
     const fs = Math.max(9, l.size * cam.scale);
@@ -1264,14 +1274,18 @@ export class Renderer {
   }
 
   drawTimer(t, world, sel) {
+    if (this.thumb) return;
     const ctx = this.ctx;
     const cam = this.camera;
     const s = cam.toScreen(t.x, t.y);
+    const k = timerScale(cam);
     const w = 136;
     const h = 46;
-    const x = s.x - w / 2;
-    const y = s.y - h / 2;
     ctx.save();
+    ctx.translate(s.x, s.y);
+    ctx.scale(k, k);
+    const x = -w / 2;
+    const y = -h / 2;
     ctx.fillStyle = 'rgba(4, 8, 18, 0.9)';
     ctx.strokeStyle = sel ? '#7dd3fc' : t.running ? 'rgba(74, 222, 128, 0.7)' : 'rgba(100, 116, 139, 0.6)';
     ctx.lineWidth = sel ? 2 : 1.2;
@@ -1434,6 +1448,7 @@ export class Renderer {
   }
 
   tag(text, x, y, color = '#e2e8f0', align = 'left') {
+    if (this.thumb) return;
     const ctx = this.ctx;
     ctx.font = '500 11px Inter, sans-serif';
     const w = ctx.measureText(text).width;
@@ -1445,6 +1460,11 @@ export class Renderer {
     ctx.textBaseline = 'middle';
     ctx.fillText(text, bx + 5, y);
   }
+}
+
+// timers are drawn at a fixed screen size, shrinking a little when zoomed far out
+export function timerScale(cam) {
+  return Math.max(0.6, Math.min(1, cam.scale / 42));
 }
 
 export function fmtForce(f) {

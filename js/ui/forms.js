@@ -279,6 +279,8 @@ export class Form {
 }
 
 function round(v, d) {
+  // very small magnitudes are shown in exponent form so they are not truncated
+  if (v !== 0 && Math.abs(v) < Math.pow(10, -Math.min(d, 3))) return Number(v.toExponential(2));
   const p = Math.pow(10, d);
   return Math.round(v * p) / p;
 }

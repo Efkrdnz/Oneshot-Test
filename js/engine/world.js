@@ -496,6 +496,10 @@ export class World {
               updateManifold(c, manifold);
               c.stamp = stamp;
               active.push(c);
+              // a sleeping body touched by an awake one must take part in this
+              // step's solve, otherwise it would act as an immovable wall
+              if (!A.awake && aDyn) A.wake();
+              if (!B.awake && bDyn) B.wake();
             }
           }
         }
